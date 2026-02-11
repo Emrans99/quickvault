@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>QuickVault - Emirhan Gürbüz</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --accent: #e4e4e7;
+            --bg: #09090b;
+            --card: #18181b;
+            --border: #27272a;
+            --text: #fafafa;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Koyu Gri Sidebar */
+        .sidebar {
+            width: 360px;
+            min-width: 360px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-nav {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            color: #71717a;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            background: #09090b;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-main {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: #27272a;
+            color: #fafafa;
+            border: 1px solid var(--border);
+        }
+
+        /* Sağ Not Alanı */
+        .main-view {
+            flex: 1;
+            padding: 40px;
+            background: #09090b;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            flex: 1;
+            background: #0c0c0e;
+            border: 1px solid var(--border);
+            color: #d6deeb;
+            padding: 25px;
+            border-radius: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none;
+            resize: none;
+        }
+
+        .privacy-badge {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #a1a1aa;
+            line-height: 1.4;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            text-align: center;
+        }
+
+        .success {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid #fff;
+        }
+
+        .watermark {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            font-size: 12px;
+            color: #3f3f46;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="header-nav">
+            <h2 style="margin:0; font-size: 22px; color: var(--accent);">QuickVault</h2>
+            <span style="font-size: 11px; color: #71717a;">Geliştirici: Emirhan Gürbüz</span>
+        </div>
+
+        <div class="input-group">
+            <label>Kasa Kilidi (Şifre)</label>
+            <input type="password" id="master-key" placeholder="Notu korumak için şifre girin...">
+        </div>
+
+        <button class="btn-main" onclick="encryptData()">
+            <i class="fa-solid fa-lock"></i> ŞİFRELE VE GİZLE
+        </button>
+        <button class="btn-main btn-secondary" onclick="decryptData()">
+            <i class="fa-solid fa-lock-open"></i> ŞİFREYİ ÇÖZ VE OKU
+        </button>
+
+        <div id="msg" class="status success"></div>
+
+        <div class="privacy-badge">
+            <i class="fa-solid fa-user-shield"></i>
+            <strong>Güvenlik:</strong> Verileriniz asla sunucuya gitmez. Şifreleme tamamen senin tarayıcında yapılır.
+        </div>
+
+        <div style="margin-top: auto; font-size: 11px; color: #4b5563;">
+            Quick Series #6 | <strong>Emrans99</strong>
+        </div>
+    </div>
+
+    <div class="main-view">
+        <label>Not Defteri</label>
+        <textarea id="vault-text" placeholder="Şifrelemek istediğin özel notlarını buraya yaz..."></textarea>
+    </div>
+
+    <div class="watermark">QuickVault by Emirhan Gürbüz</div>
+
+    <script>
+        async function deriveKey(password) {
+            const encoder = new TextEncoder();
+            const salt = encoder.encode('quick-vault-v1-salt');
+            const baseKey = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveKey']);
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encryptData() {
+            const password = document.getElementById('master-key').value;
+            const text = document.getElementById('vault-text').value;
+            if (!password || !text) return alert("Şifre ve not girmelisin!");
+
+            try {
+                const key = await deriveKey(password);
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const encodedText = new TextEncoder().encode(text);
+                const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encodedText);
+                const combined = new Uint8Array(iv.length + encrypted.byteLength);
+                combined.set(iv);
+                combined.set(new Uint8Array(encrypted), iv.length);
+                document.getElementById('vault-text').value = btoa(String.fromCharCode(...combined));
+                showMsg("Not şifrelendi!");
+            } catch (e) { alert("Hata oluştu!"); }
+        }
+
+        async function decryptData() {
+            const password = document.getElementById('master-key').value;
+            const b64Data = document.getElementById('vault-text').value;
+            if (!password || !b64Data) return alert("Şifre ve şifreli metin lazım!");
+
+            try {
+                const combined = new Uint8Array(atob(b64Data).split("").map(c => c.charCodeAt(0)));
+                const iv = combined.slice(0, 12);
+                const data = combined.slice(12);
+                const key = await deriveKey(password);
+                const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+                document.getElementById('vault-text').value = new TextDecoder().decode(decrypted);
+                showMsg("Not çözüldü!");
+            } catch (e) { alert("Yanlış şifre!"); }
+        }
+
+        function showMsg(text) {
+            const m = document.getElementById('msg');
+            m.innerText = text; m.style.display = 'block';
+            setTimeout(() => m.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+
+</html>

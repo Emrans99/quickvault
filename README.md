@@ -16,5 +16,5 @@ Araca [emrans99.github.io/quickvault](https://emrans99.github.io/quickvault) üz
 
 ---
 <p align="center">
-  Developed by <a href="https://github.com/Emrans99"><b>Emirhan Gürbüz</b></a> | <b>Quick Series #6</b>
+  Developed by <a href="https://emrans99.github.io/quickvault/ "><b>Emirhan Gürbüz</b></a> | <b>Quick Series #6</b>
 </p>
